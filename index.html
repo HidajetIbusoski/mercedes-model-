@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>3D Car Scene - Mobile Controls</title>
+    <title>3D Mercedes Game - KFZ Quiz</title>
     <style>
         body {
             margin: 0;
@@ -199,7 +199,7 @@
 
 <body>
     <div id="loading-screen">
-        <div id="loading-text">Loading Game...</div>
+        <div id="loading-text">Loading Mercedes Game...</div>
         <div id="loading-progress">0%</div>
     </div>
     <div id="container"></div>
@@ -365,7 +365,7 @@
         };
         loadingManager.onError = (url) => {
             console.error(`There was an error loading ${url}`);
-            loadingScreen.textContent = `Error loading: ${url}. Check console.`;
+            loadingScreen.innerHTML = `<div style="font-size: 0.6em;">Error loading: ${url}<br>Check browser console for details</div>`;
             loadingScreen.classList.remove('hidden');
             loadingScreen.style.opacity = 1;
         };
@@ -656,14 +656,19 @@
             dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.7/');
             loader.setDRACOLoader(dracoLoader);
 
-            // ✅ DEIN GITHUB PAGES LINK FÜR DAS MERCEDES MODELL
-            const carUrl = 'https://hidajetibusoski.github.io/mercedes-model/models/mercedes.glb';
+            // ✅ DEIN MERCEDES GITHUB LINK (Beachte den Bindestrich am Ende!)
+            const carUrl = 'https://hidajetibusoski.github.io/mercedes-model-/models/mercedes.glb';
+            
+            // Fallback zu Ferrari falls Mercedes nicht lädt
             const fallbackCarUrl = 'https://threejs.org/examples/models/gltf/ferrari.glb';
+
+            console.log('🚗 Loading Mercedes from:', carUrl);
 
             loader.load(carUrl, (gltf) => {
                 carModel = gltf.scene;
                 
-                // ⚠️ Skalierung anpassen falls nötig!
+                // ⚠️ Skalierung - ggf. anpassen je nach Modellgröße!
+                // Probiere: 0.5, 0.8, 1.0, 1.5, 2.0
                 carModel.scale.set(1.0, 1.0, 1.0);
                 
                 const box = new THREE.Box3().setFromObject(carModel);
@@ -698,15 +703,18 @@
                 enemyCar.position.set(initialEnemyX, carBaseY, roadLength * 0.7);
                 enemyCar.rotation.y = Math.PI;
                 scene.add(enemyCar);
-                console.log("Enemy car added and colored blue");
+                console.log("✅ Enemy Mercedes added (blue)");
 
                 camera.position.set(0, carBaseY + 3, -7);
                 camera.lookAt(carModel.position.x, carBaseY + 1, carModel.position.z + 5);
 
-            }, undefined, (error) => {
-                console.error('❌ Error loading Mercedes, trying Ferrari fallback:', error);
+            }, (progress) => {
+                console.log('Loading progress:', Math.round((progress.loaded / progress.total) * 100) + '%');
+            }, (error) => {
+                console.error('❌ Error loading Mercedes:', error);
+                console.log('🔄 Trying Ferrari fallback...');
                 
-                // Fallback to Ferrari
+                // Fallback zu Ferrari
                 loader.load(fallbackCarUrl, (gltf) => {
                     carModel = gltf.scene;
                     carModel.scale.set(0.8, 0.8, 0.8);
@@ -740,11 +748,13 @@
                     enemyCar.position.set(initialEnemyX, carBaseY, roadLength * 0.7);
                     enemyCar.rotation.y = Math.PI;
                     scene.add(enemyCar);
+                    console.log("⚠️ Ferrari fallback loaded");
 
                     camera.position.set(0, carBaseY + 3, -7);
                     camera.lookAt(carModel.position.x, carBaseY + 1, carModel.position.z + 5);
                 }, undefined, (error) => {
                     console.error('❌ Fallback also failed:', error);
+                    // Letzter Fallback: Einfaches Box-Modell
                     const fallbackGeo = new THREE.BoxGeometry(2, 1, 4);
                     const fallbackMat = new THREE.MeshStandardMaterial({ color: 0xff0000, roughness: 0.5, metalness: 0.5 });
                     carModel = new THREE.Mesh(fallbackGeo, fallbackMat);
@@ -759,6 +769,7 @@
                     enemyCar.castShadow = true;
                     enemyCar.receiveShadow = true;
                     scene.add(enemyCar);
+                    console.log("⚠️ Using simple box fallback");
 
                     camera.position.set(0, carBaseY + 3, -7);
                     camera.lookAt(carModel.position.x, carBaseY + 1, carModel.position.z + 5);
