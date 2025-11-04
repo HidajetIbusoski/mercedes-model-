@@ -656,17 +656,16 @@
             dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.7/');
             loader.setDRACOLoader(dracoLoader);
 
-            // WICHTIG: Sketchfab-Modelle können nicht direkt geladen werden!
-            // Du musst das Modell herunterladen und auf deinem Server hosten.
-            // Hier ist ein Platzhalter - ersetze dies mit deinem eigenen Pfad:
-            const carUrl = './models/mercedes.glb'; // <-- DEIN PFAD ZUM MERCEDES MODELL
-
-            // Fallback zum Ferrari, falls Mercedes nicht verfügbar
+            // ✅ DEIN GITHUB PAGES LINK FÜR DAS MERCEDES MODELL
+            const carUrl = 'https://hidajetibusoski.github.io/mercedes-model/models/mercedes.glb';
             const fallbackCarUrl = 'https://threejs.org/examples/models/gltf/ferrari.glb';
 
             loader.load(carUrl, (gltf) => {
                 carModel = gltf.scene;
-                carModel.scale.set(0.8, 0.8, 0.8);
+                
+                // ⚠️ Skalierung anpassen falls nötig!
+                carModel.scale.set(1.0, 1.0, 1.0);
+                
                 const box = new THREE.Box3().setFromObject(carModel);
                 carBaseY = -box.min.y + 0.01;
                 carModel.position.set(0, carBaseY, 0);
@@ -679,7 +678,9 @@
                     }
                 });
                 scene.add(carModel);
+                console.log("✅ Mercedes loaded successfully!");
 
+                // Enemy Car (blauer Mercedes)
                 enemyCar = carModel.clone();
                 enemyCar.traverse((node) => {
                     if (node.isMesh) {
@@ -703,7 +704,7 @@
                 camera.lookAt(carModel.position.x, carBaseY + 1, carModel.position.z + 5);
 
             }, undefined, (error) => {
-                console.error('Error loading Mercedes model, trying Ferrari fallback:', error);
+                console.error('❌ Error loading Mercedes, trying Ferrari fallback:', error);
                 
                 // Fallback to Ferrari
                 loader.load(fallbackCarUrl, (gltf) => {
@@ -743,7 +744,7 @@
                     camera.position.set(0, carBaseY + 3, -7);
                     camera.lookAt(carModel.position.x, carBaseY + 1, carModel.position.z + 5);
                 }, undefined, (error) => {
-                    console.error('Fallback also failed:', error);
+                    console.error('❌ Fallback also failed:', error);
                     const fallbackGeo = new THREE.BoxGeometry(2, 1, 4);
                     const fallbackMat = new THREE.MeshStandardMaterial({ color: 0xff0000, roughness: 0.5, metalness: 0.5 });
                     carModel = new THREE.Mesh(fallbackGeo, fallbackMat);
