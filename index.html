@@ -656,17 +656,22 @@
             dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.7/');
             loader.setDRACOLoader(dracoLoader);
 
-            const carUrl = 'https://hidajetibusoski.github.io/mercedes-model/models/mercedes.glb';
+            // ✅ KORRIGIERTER GITHUB PAGES LINK FÜR DAS MERCEDES MODELL
+            const carUrl = 'https://hidajetibusoski.github.io/mercedes-model-/models/mercedes.glb';
             const fallbackCarUrl = 'https://threejs.org/examples/models/gltf/ferrari.glb';
 
             loader.load(carUrl, (gltf) => {
                 carModel = gltf.scene;
+                
+                // Skalierung anpassen falls nötig
                 carModel.scale.set(1.0, 1.0, 1.0);
                 
                 const box = new THREE.Box3().setFromObject(carModel);
                 carBaseY = -box.min.y + 0.01;
                 carModel.position.set(0, carBaseY, 0);
-                carModel.rotation.y = 0;
+                
+                // ✅ ROTATION ENTFERNT - Auto schaut standardmäßig nach vorne
+                // carModel.rotation.y = Math.PI;
 
                 carModel.traverse((node) => {
                     if (node.isMesh) {
@@ -677,6 +682,7 @@
                 scene.add(carModel);
                 console.log("✅ Mercedes loaded successfully!");
 
+                // Enemy Car (blauer Mercedes)
                 enemyCar = carModel.clone();
                 enemyCar.traverse((node) => {
                     if (node.isMesh) {
@@ -692,7 +698,10 @@
                 });
                 const initialEnemyX = (Math.random() < 0.5 ? -1 : 1) * roadWidth / 4;
                 enemyCar.position.set(initialEnemyX, carBaseY, roadLength * 0.7);
-                enemyCar.rotation.y = Math.PI;
+                
+                // ✅ ROTATION AUCH BEIM ENEMY CAR ENTFERNT
+                // enemyCar.rotation.y = Math.PI;
+                
                 scene.add(enemyCar);
                 console.log("Enemy car added and colored blue");
 
@@ -702,13 +711,14 @@
             }, undefined, (error) => {
                 console.error('❌ Error loading Mercedes, trying Ferrari fallback:', error);
                 
+                // Fallback to Ferrari
                 loader.load(fallbackCarUrl, (gltf) => {
                     carModel = gltf.scene;
                     carModel.scale.set(0.8, 0.8, 0.8);
                     const box = new THREE.Box3().setFromObject(carModel);
                     carBaseY = -box.min.y + 0.01;
                     carModel.position.set(0, carBaseY, 0);
-                    carModel.rotation.y = 0;
+                    carModel.rotation.y = Math.PI;
 
                     carModel.traverse((node) => {
                         if (node.isMesh) {
@@ -745,14 +755,12 @@
                     carModel = new THREE.Mesh(fallbackGeo, fallbackMat);
                     carBaseY = 0.5 + 0.01;
                     carModel.position.set(0, carBaseY, 0);
-                    carModel.rotation.y = 0;
                     carModel.castShadow = true;
                     carModel.receiveShadow = true;
                     scene.add(carModel);
 
                     enemyCar = new THREE.Mesh(fallbackGeo, new THREE.MeshStandardMaterial({ color: 0x0000ff, roughness: 0.5, metalness: 0.5 }));
                     enemyCar.position.set(roadWidth / 4, carBaseY, roadLength * 0.7);
-                    enemyCar.rotation.y = Math.PI;
                     enemyCar.castShadow = true;
                     enemyCar.receiveShadow = true;
                     scene.add(enemyCar);
@@ -782,17 +790,17 @@
             const rightButton = document.getElementById('right-button');
 
             if (leftButton) {
-                leftButton.addEventListener('pointerdown', (e) => { if (!isGameOver && !isPaused) { e.preventDefault(); moveLeft = true; } }, { passive: false });
-                leftButton.addEventListener('pointerup', (e) => { e.preventDefault(); moveLeft = false; });
+                leftButton.addEventListener('pointerdown', (e) => { if (!isGameOver && !isPaused) { e.preventDefault(); moveRight = true; } }, { passive: false });
+                leftButton.addEventListener('pointerup', (e) => { e.preventDefault(); moveRight = false; });
                 leftButton.addEventListener('pointerleave', (e) => {
-                    if (e.pointerType === 'touch') { moveLeft = false; }
+                    if (e.pointerType === 'touch') { moveRight = false; }
                 });
             }
             if (rightButton) {
-                rightButton.addEventListener('pointerdown', (e) => { if (!isGameOver && !isPaused) { e.preventDefault(); moveRight = true; } }, { passive: false });
-                rightButton.addEventListener('pointerup', (e) => { e.preventDefault(); moveRight = false; });
+                rightButton.addEventListener('pointerdown', (e) => { if (!isGameOver && !isPaused) { e.preventDefault(); moveLeft = true; } }, { passive: false });
+                rightButton.addEventListener('pointerup', (e) => { e.preventDefault(); moveLeft = false; });
                 rightButton.addEventListener('pointerleave', (e) => {
-                    if (e.pointerType === 'touch') { moveRight = false; }
+                    if (e.pointerType === 'touch') { moveLeft = false; }
                 });
             }
         }
@@ -957,7 +965,6 @@
                 if (enemyCar.position.z < -sceneryRecycleDistance) {
                     enemyCar.position.z = roadLength * 0.7 + Math.random() * roadLength * 0.5;
                     enemyCar.position.x = (Math.random() < 0.5 ? -1 : 1) * (roadWidth / 2 - kerbWidth - 1);
-                    enemyCar.rotation.y = Math.PI;
                 }
             }
 
