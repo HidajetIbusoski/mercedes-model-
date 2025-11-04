@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>3D Mercedes Game - KFZ Quiz</title>
+    <title>3D Car Scene - Mobile Controls</title>
     <style>
         body {
             margin: 0;
@@ -199,7 +199,7 @@
 
 <body>
     <div id="loading-screen">
-        <div id="loading-text">Loading Mercedes Game...</div>
+        <div id="loading-text">Loading Game...</div>
         <div id="loading-progress">0%</div>
     </div>
     <div id="container"></div>
@@ -365,7 +365,7 @@
         };
         loadingManager.onError = (url) => {
             console.error(`There was an error loading ${url}`);
-            loadingScreen.innerHTML = `<div style="font-size: 0.6em;">Error loading: ${url}<br>Check browser console for details</div>`;
+            loadingScreen.textContent = `Error loading: ${url}. Check console.`;
             loadingScreen.classList.remove('hidden');
             loadingScreen.style.opacity = 1;
         };
@@ -656,25 +656,17 @@
             dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.7/');
             loader.setDRACOLoader(dracoLoader);
 
-            // ✅ DEIN MERCEDES GITHUB LINK (Beachte den Bindestrich am Ende!)
-            const carUrl = 'https://hidajetibusoski.github.io/mercedes-model-/models/mercedes.glb';
-            
-            // Fallback zu Ferrari falls Mercedes nicht lädt
+            const carUrl = 'https://hidajetibusoski.github.io/mercedes-model/models/mercedes.glb';
             const fallbackCarUrl = 'https://threejs.org/examples/models/gltf/ferrari.glb';
-
-            console.log('🚗 Loading Mercedes from:', carUrl);
 
             loader.load(carUrl, (gltf) => {
                 carModel = gltf.scene;
-                
-                // ⚠️ Skalierung - ggf. anpassen je nach Modellgröße!
-                // Probiere: 0.5, 0.8, 1.0, 1.5, 2.0
                 carModel.scale.set(1.0, 1.0, 1.0);
                 
                 const box = new THREE.Box3().setFromObject(carModel);
                 carBaseY = -box.min.y + 0.01;
                 carModel.position.set(0, carBaseY, 0);
-                carModel.rotation.y = Math.PI;
+                carModel.rotation.y = 0;
 
                 carModel.traverse((node) => {
                     if (node.isMesh) {
@@ -685,7 +677,6 @@
                 scene.add(carModel);
                 console.log("✅ Mercedes loaded successfully!");
 
-                // Enemy Car (blauer Mercedes)
                 enemyCar = carModel.clone();
                 enemyCar.traverse((node) => {
                     if (node.isMesh) {
@@ -703,25 +694,21 @@
                 enemyCar.position.set(initialEnemyX, carBaseY, roadLength * 0.7);
                 enemyCar.rotation.y = Math.PI;
                 scene.add(enemyCar);
-                console.log("✅ Enemy Mercedes added (blue)");
+                console.log("Enemy car added and colored blue");
 
                 camera.position.set(0, carBaseY + 3, -7);
                 camera.lookAt(carModel.position.x, carBaseY + 1, carModel.position.z + 5);
 
-            }, (progress) => {
-                console.log('Loading progress:', Math.round((progress.loaded / progress.total) * 100) + '%');
-            }, (error) => {
-                console.error('❌ Error loading Mercedes:', error);
-                console.log('🔄 Trying Ferrari fallback...');
+            }, undefined, (error) => {
+                console.error('❌ Error loading Mercedes, trying Ferrari fallback:', error);
                 
-                // Fallback zu Ferrari
                 loader.load(fallbackCarUrl, (gltf) => {
                     carModel = gltf.scene;
                     carModel.scale.set(0.8, 0.8, 0.8);
                     const box = new THREE.Box3().setFromObject(carModel);
                     carBaseY = -box.min.y + 0.01;
                     carModel.position.set(0, carBaseY, 0);
-                    carModel.rotation.y = Math.PI;
+                    carModel.rotation.y = 0;
 
                     carModel.traverse((node) => {
                         if (node.isMesh) {
@@ -748,28 +735,27 @@
                     enemyCar.position.set(initialEnemyX, carBaseY, roadLength * 0.7);
                     enemyCar.rotation.y = Math.PI;
                     scene.add(enemyCar);
-                    console.log("⚠️ Ferrari fallback loaded");
 
                     camera.position.set(0, carBaseY + 3, -7);
                     camera.lookAt(carModel.position.x, carBaseY + 1, carModel.position.z + 5);
                 }, undefined, (error) => {
                     console.error('❌ Fallback also failed:', error);
-                    // Letzter Fallback: Einfaches Box-Modell
                     const fallbackGeo = new THREE.BoxGeometry(2, 1, 4);
                     const fallbackMat = new THREE.MeshStandardMaterial({ color: 0xff0000, roughness: 0.5, metalness: 0.5 });
                     carModel = new THREE.Mesh(fallbackGeo, fallbackMat);
                     carBaseY = 0.5 + 0.01;
                     carModel.position.set(0, carBaseY, 0);
+                    carModel.rotation.y = 0;
                     carModel.castShadow = true;
                     carModel.receiveShadow = true;
                     scene.add(carModel);
 
                     enemyCar = new THREE.Mesh(fallbackGeo, new THREE.MeshStandardMaterial({ color: 0x0000ff, roughness: 0.5, metalness: 0.5 }));
                     enemyCar.position.set(roadWidth / 4, carBaseY, roadLength * 0.7);
+                    enemyCar.rotation.y = Math.PI;
                     enemyCar.castShadow = true;
                     enemyCar.receiveShadow = true;
                     scene.add(enemyCar);
-                    console.log("⚠️ Using simple box fallback");
 
                     camera.position.set(0, carBaseY + 3, -7);
                     camera.lookAt(carModel.position.x, carBaseY + 1, carModel.position.z + 5);
@@ -796,17 +782,17 @@
             const rightButton = document.getElementById('right-button');
 
             if (leftButton) {
-                leftButton.addEventListener('pointerdown', (e) => { if (!isGameOver && !isPaused) { e.preventDefault(); moveRight = true; } }, { passive: false });
-                leftButton.addEventListener('pointerup', (e) => { e.preventDefault(); moveRight = false; });
+                leftButton.addEventListener('pointerdown', (e) => { if (!isGameOver && !isPaused) { e.preventDefault(); moveLeft = true; } }, { passive: false });
+                leftButton.addEventListener('pointerup', (e) => { e.preventDefault(); moveLeft = false; });
                 leftButton.addEventListener('pointerleave', (e) => {
-                    if (e.pointerType === 'touch') { moveRight = false; }
+                    if (e.pointerType === 'touch') { moveLeft = false; }
                 });
             }
             if (rightButton) {
-                rightButton.addEventListener('pointerdown', (e) => { if (!isGameOver && !isPaused) { e.preventDefault(); moveLeft = true; } }, { passive: false });
-                rightButton.addEventListener('pointerup', (e) => { e.preventDefault(); moveLeft = false; });
+                rightButton.addEventListener('pointerdown', (e) => { if (!isGameOver && !isPaused) { e.preventDefault(); moveRight = true; } }, { passive: false });
+                rightButton.addEventListener('pointerup', (e) => { e.preventDefault(); moveRight = false; });
                 rightButton.addEventListener('pointerleave', (e) => {
-                    if (e.pointerType === 'touch') { moveLeft = false; }
+                    if (e.pointerType === 'touch') { moveRight = false; }
                 });
             }
         }
