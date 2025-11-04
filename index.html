@@ -99,7 +99,6 @@
             background-color: #1a9e0c;
         }
 
-        /* Quiz Modal */
         #quiz-modal {
             position: absolute;
             top: 50%;
@@ -213,7 +212,6 @@
         <button id="restart-button">Restart</button>
     </div>
 
-    <!-- Quiz Modal -->
     <div id="quiz-modal">
         <div id="quiz-question"></div>
         <div id="quiz-answers"></div>
@@ -256,7 +254,6 @@
         const kerbHeight = 0.2;
         const kerbWidth = 0.3;
 
-        // Game State
         let moveLeft = false;
         let moveRight = false;
         const carMoveSpeed = 0.15;
@@ -265,21 +262,18 @@
         let isGameOver = false;
         let isPaused = false;
 
-        // Points
         const points = [];
         const numPoints = 15;
         const pointValue = 10;
         let pointGeometry, pointMaterial;
         const pointRadius = 0.3;
 
-        // Checkpoints
         const checkpoints = [];
         const numCheckpoints = 5;
         let checkpointGeometry, checkpointMaterial;
         const checkpointRadius = 1.5;
         const checkpointHeight = 8;
 
-        // Quiz Questions (KFZ-specific)
         const quizQuestions = [
             {
                 question: "Was bedeutet ABS?",
@@ -336,7 +330,6 @@
         let currentQuestion = null;
         let currentCheckpoint = null;
 
-        // UI References
         const loadingScreen = document.getElementById('loading-screen');
         const loadingProgress = document.getElementById('loading-progress');
         const scoreElement = document.getElementById('score');
@@ -347,7 +340,6 @@
         const quizAnswers = document.getElementById('quiz-answers');
         const quizFeedback = document.getElementById('quiz-feedback');
 
-        // Bounding Boxes
         let playerBox = new THREE.Box3();
         let enemyBox = new THREE.Box3();
         let pointBox = new THREE.Box3();
@@ -356,20 +348,22 @@
         const loadingManager = new THREE.LoadingManager();
 
         loadingManager.onLoad = () => {
-            console.log("All resources loaded!");
+            console.log("✅ All resources loaded!");
             loadingScreen.classList.add('hidden');
             setTimeout(() => {
                 if (loadingScreen) loadingScreen.style.display = 'none';
                 if (!isGameOver) animate();
             }, 600);
         };
+        
         loadingManager.onError = (url) => {
-            console.error(`There was an error loading ${url}`);
-            loadingScreen.innerHTML = `<div>Error loading model</div><div style="font-size: 0.5em;">Trying fallback...</div>`;
+            console.error(`❌ Error loading: ${url}`);
         };
+        
         loadingManager.onProgress = (url, itemsLoaded, itemsTotal) => {
             const progress = Math.round((itemsLoaded / itemsTotal) * 100);
             loadingProgress.textContent = `${progress}%`;
+            console.log(`Loading: ${itemsLoaded}/${itemsTotal} (${progress}%)`);
         };
 
         init();
@@ -614,7 +608,6 @@
             scene.add(trafficLightLeft);
             scene.add(trafficLightRight);
 
-            // Points Setup
             pointGeometry = new THREE.SphereGeometry(pointRadius, 16, 16);
             pointMaterial = new THREE.MeshStandardMaterial({ color: 0xffff00, emissive: 0xaaaa00, emissiveIntensity: 0.8, metalness: 0.9, roughness: 0.1 });
             for (let i = 0; i < numPoints; i++) {
@@ -626,7 +619,6 @@
                 scene.add(point);
             }
 
-            // Checkpoints Setup
             checkpointGeometry = new THREE.CylinderGeometry(checkpointRadius, checkpointRadius, checkpointHeight, 32);
             checkpointMaterial = new THREE.MeshStandardMaterial({
                 color: 0x00ff00,
@@ -648,38 +640,50 @@
                 scene.add(checkpoint);
             }
 
-            // Car Model Loading - MERCEDES
+            // ⚡ CAR MODEL LOADING MIT ALLEN ALTERNATIVEN
             const loader = new GLTFLoader(loadingManager);
             const dracoLoader = new DRACOLoader(loadingManager);
             dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.7/');
             loader.setDRACOLoader(dracoLoader);
 
-            // ✅ BESTE LÖSUNG: RAW GITHUB URL
+            console.log("🚗 Starting car model loading...");
+
+            // Liste aller möglichen URLs
             const carUrls = [
+                // DEIN REPO
                 'https://raw.githubusercontent.com/HidajetIbusoski/mercedes-model-/main/models/mercedes.glb',
                 'https://raw.githubusercontent.com/HidajetIbusoski/mercedes-model-/master/models/mercedes.glb',
-                'https://hidajetibusoski.github.io/mercedes-model-/models/mercedes.glb'
+                'https://github.com/HidajetIbusoski/mercedes-model-/raw/main/models/mercedes.glb',
+                
+                // THREEJS EXAMPLES - Ferrari (Backup)
+                'https://threejs.org/examples/models/gltf/ferrari.glb'
             ];
-            const fallbackCarUrl = 'https://threejs.org/examples/models/gltf/ferrari.glb';
 
-            let currentUrlIndex = 0;
+            let currentIndex = 0;
 
-            function tryLoadCar(urlIndex = 0) {
-                if (urlIndex >= carUrls.length) {
-                    console.log('All Mercedes URLs failed, loading Ferrari fallback...');
-                    loadFallbackCar();
+            function loadCarModel(index) {
+                if (index >= carUrls.length) {
+                    console.error("❌ All car models failed to load!");
+                    createFallbackCar();
                     return;
                 }
 
-                const carUrl = carUrls[urlIndex];
-                console.log(`Attempting to load Mercedes from: ${carUrl}`);
+                const url = carUrls[index];
+                console.log(`🔄 Trying URL ${index + 1}/${carUrls.length}: ${url}`);
 
-                loader.load(carUrl, 
+                loader.load(
+                    url,
                     (gltf) => {
+                        console.log(`✅ SUCCESS! Car loaded from: ${url}`);
                         carModel = gltf.scene;
                         
-                        // Skalierung anpassen
-                        carModel.scale.set(1.0, 1.0, 1.0);
+                        // Rotation anpassen je nach Modell
+                        if (url.includes('ferrari')) {
+                            carModel.scale.set(0.8, 0.8, 0.8);
+                            carModel.rotation.y = Math.PI;
+                        } else {
+                            carModel.scale.set(1.0, 1.0, 1.0);
+                        }
                         
                         const box = new THREE.Box3().setFromObject(carModel);
                         carBaseY = -box.min.y + 0.01;
@@ -692,105 +696,62 @@
                             }
                         });
                         scene.add(carModel);
-                        console.log("✅ Mercedes loaded successfully from:", carUrl);
 
-                        // Enemy Car (blauer Mercedes)
+                        // Enemy Car
                         enemyCar = carModel.clone();
                         enemyCar.traverse((node) => {
                             if (node.isMesh) {
-                                const originalMaterial = node.material;
-                                const enemyMaterial = originalMaterial.clone();
-                                enemyMaterial.color.setHex(0x0000ff);
-                                enemyMaterial.metalness = 0.9;
-                                enemyMaterial.roughness = 0.2;
-                                node.material = enemyMaterial;
+                                const mat = node.material.clone();
+                                mat.color.setHex(0x0000ff);
+                                mat.metalness = 0.9;
+                                mat.roughness = 0.2;
+                                node.material = mat;
                                 node.castShadow = true;
                                 node.receiveShadow = true;
                             }
                         });
-                        const initialEnemyX = (Math.random() < 0.5 ? -1 : 1) * roadWidth / 4;
-                        enemyCar.position.set(initialEnemyX, carBaseY, roadLength * 0.7);
+                        const initialX = (Math.random() < 0.5 ? -1 : 1) * roadWidth / 4;
+                        enemyCar.position.set(initialX, carBaseY, roadLength * 0.7);
+                        if (url.includes('ferrari')) {
+                            enemyCar.rotation.y = Math.PI;
+                        }
                         scene.add(enemyCar);
-                        console.log("Enemy car added and colored blue");
 
                         camera.position.set(0, carBaseY + 3, -7);
-                        camera.lookAt(carModel.position.x, carBaseY + 1, carModel.position.z + 5);
-                    }, 
-                    undefined, 
+                        camera.lookAt(0, carBaseY + 1, 5);
+                    },
+                    (progress) => {
+                        if (progress.lengthComputable) {
+                            const percent = Math.round((progress.loaded / progress.total) * 100);
+                            console.log(`📦 Loading car: ${percent}%`);
+                        }
+                    },
                     (error) => {
-                        console.error(`❌ Failed to load from ${carUrl}:`, error);
-                        tryLoadCar(urlIndex + 1);
+                        console.error(`❌ Failed to load from ${url}:`, error);
+                        loadCarModel(index + 1);
                     }
                 );
             }
 
-            function loadFallbackCar() {
-                loader.load(fallbackCarUrl, (gltf) => {
-                    carModel = gltf.scene;
-                    carModel.scale.set(0.8, 0.8, 0.8);
-                    const box = new THREE.Box3().setFromObject(carModel);
-                    carBaseY = -box.min.y + 0.01;
-                    carModel.position.set(0, carBaseY, 0);
-                    carModel.rotation.y = Math.PI;
-
-                    carModel.traverse((node) => {
-                        if (node.isMesh) {
-                            node.castShadow = true;
-                            node.receiveShadow = true;
-                        }
-                    });
-                    scene.add(carModel);
-                    console.log("✅ Ferrari fallback loaded");
-
-                    enemyCar = carModel.clone();
-                    enemyCar.traverse((node) => {
-                        if (node.isMesh) {
-                            const originalMaterial = node.material;
-                            const enemyMaterial = originalMaterial.clone();
-                            enemyMaterial.color.setHex(0x0000ff);
-                            enemyMaterial.metalness = 0.9;
-                            enemyMaterial.roughness = 0.2;
-                            node.material = enemyMaterial;
-                            node.castShadow = true;
-                            node.receiveShadow = true;
-                        }
-                    });
-                    const initialEnemyX = (Math.random() < 0.5 ? -1 : 1) * roadWidth / 4;
-                    enemyCar.position.set(initialEnemyX, carBaseY, roadLength * 0.7);
-                    enemyCar.rotation.y = Math.PI;
-                    scene.add(enemyCar);
-
-                    camera.position.set(0, carBaseY + 3, -7);
-                    camera.lookAt(carModel.position.x, carBaseY + 1, carModel.position.z + 5);
-                }, undefined, (error) => {
-                    console.error('❌ Even Ferrari fallback failed:', error);
-                    createBoxCar();
-                });
-            }
-
-            function createBoxCar() {
-                console.log('Creating box car as last resort');
-                const fallbackGeo = new THREE.BoxGeometry(2, 1, 4);
-                const fallbackMat = new THREE.MeshStandardMaterial({ color: 0xff0000, roughness: 0.5, metalness: 0.5 });
-                carModel = new THREE.Mesh(fallbackGeo, fallbackMat);
-                carBaseY = 0.5 + 0.01;
+            function createFallbackCar() {
+                console.log("🔧 Creating fallback box car...");
+                const geo = new THREE.BoxGeometry(2, 1, 4);
+                const mat = new THREE.MeshStandardMaterial({ color: 0xff0000 });
+                carModel = new THREE.Mesh(geo, mat);
+                carBaseY = 0.51;
                 carModel.position.set(0, carBaseY, 0);
                 carModel.castShadow = true;
-                carModel.receiveShadow = true;
                 scene.add(carModel);
 
-                enemyCar = new THREE.Mesh(fallbackGeo, new THREE.MeshStandardMaterial({ color: 0x0000ff, roughness: 0.5, metalness: 0.5 }));
+                enemyCar = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: 0x0000ff }));
                 enemyCar.position.set(roadWidth / 4, carBaseY, roadLength * 0.7);
                 enemyCar.castShadow = true;
-                enemyCar.receiveShadow = true;
                 scene.add(enemyCar);
 
                 camera.position.set(0, carBaseY + 3, -7);
-                camera.lookAt(carModel.position.x, carBaseY + 1, carModel.position.z + 5);
             }
 
-            // Start loading process
-            tryLoadCar(0);
+            loadCarModel(0);
 
             restartButton.addEventListener('click', restartGame);
             window.addEventListener('resize', onWindowResize, false);
@@ -814,16 +775,12 @@
             if (leftButton) {
                 leftButton.addEventListener('pointerdown', (e) => { if (!isGameOver && !isPaused) { e.preventDefault(); moveRight = true; } }, { passive: false });
                 leftButton.addEventListener('pointerup', (e) => { e.preventDefault(); moveRight = false; });
-                leftButton.addEventListener('pointerleave', (e) => {
-                    if (e.pointerType === 'touch') { moveRight = false; }
-                });
+                leftButton.addEventListener('pointerleave', (e) => { if (e.pointerType === 'touch') { moveRight = false; } });
             }
             if (rightButton) {
                 rightButton.addEventListener('pointerdown', (e) => { if (!isGameOver && !isPaused) { e.preventDefault(); moveLeft = true; } }, { passive: false });
                 rightButton.addEventListener('pointerup', (e) => { e.preventDefault(); moveLeft = false; });
-                rightButton.addEventListener('pointerleave', (e) => {
-                    if (e.pointerType === 'touch') { moveLeft = false; }
-                });
+                rightButton.addEventListener('pointerleave', (e) => { if (e.pointerType === 'touch') { moveLeft = false; } });
             }
         }
 
@@ -911,12 +868,7 @@
         function animate() {
             requestAnimationFrame(animate);
 
-            if (isGameOver) {
-                renderer.render(scene, camera);
-                return;
-            }
-
-            if (isPaused) {
+            if (isGameOver || isPaused) {
                 renderer.render(scene, camera);
                 return;
             }
